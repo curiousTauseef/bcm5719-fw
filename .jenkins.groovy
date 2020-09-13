@@ -129,6 +129,14 @@ def build(nodeName, archive = false, archive_cab = false, analyze = true, test_a
                 {
                     archiveArtifacts artifacts: '*.zip', fingerprint: true
                     archiveArtifacts artifacts: '*.tar.gz', fingerprint: true
+                    publishHTML(target: [
+                        allowMissing: false,
+                        alwaysLinkToLastBuild: false,
+                        keepAll: true,
+                        reportDir: 'coverage',
+                        reportFiles: 'index.html',
+                        reportName: "Coverage Report"
+                    ])
                 }
             }
 
