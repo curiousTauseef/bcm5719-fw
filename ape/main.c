@@ -473,6 +473,7 @@ void __attribute__((noreturn)) __start()
     NVIC.VectorTableOffset.r32 = caster.u32;
 
     // Handle Initialization
+    ncsi_print_enabled = false;
     bool full_init = handle_reset();
     if (reset_ape_console())
     {
@@ -485,6 +486,8 @@ void __attribute__((noreturn)) __start()
     NCSI_usePort(gPort);
 
     RMU_init();
+
+    ncsi_print_enabled = true;
 
     if (full_init)
     {
