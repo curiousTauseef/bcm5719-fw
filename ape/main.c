@@ -185,6 +185,7 @@ void handleBMCPacket(void)
                 else
                 {
                     int i = 0;
+                    #pragma clang loop unroll_count(376)
                     while (words--)
                     {
                         uint32_t word = (APE_PERI.BmcToNcReadBuffer.r32);

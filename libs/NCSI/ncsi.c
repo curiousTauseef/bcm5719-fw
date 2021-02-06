@@ -731,7 +731,7 @@ void reloadChannel(unsigned int ch, reload_type_t reset_phy)
     Network_InitPort(gPackageState.port[ch], reset_phy);
 }
 
-static inline bool NCSI_TxPacket_internal(const uint32_t *packet, uint32_t packet_len, bool big_endian)
+static inline __attribute__((always_inline)) bool NCSI_TxPacket_internal(const uint32_t *packet, uint32_t packet_len, bool big_endian)
 {
     uint32_t packetWords = DIVIDE_RND_UP(packet_len, sizeof(uint32_t));
 
@@ -750,6 +750,7 @@ static inline bool NCSI_TxPacket_internal(const uint32_t *packet, uint32_t packe
     }
 
     // Transmit.
+    #pragma clang loop unroll_count(376)
     for (unsigned int i = 0; i < packetWords - 1; i++)
     {
         uint32_t word;

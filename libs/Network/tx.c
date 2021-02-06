@@ -110,7 +110,7 @@ int32_t __attribute__((noinline)) Network_TX_allocateBlock(NetworkPort_t *port)
     return block;
 }
 
-static uint32_t inline Network_TX_initFirstBlock(RegTX_PORTOut_t *block, uint32_t length, int32_t blocks, int32_t next_block, uint32_t *packet, bool big_endian)
+static uint32_t inline __attribute__((always_inline)) Network_TX_initFirstBlock(RegTX_PORTOut_t *block, uint32_t length, int32_t blocks, int32_t next_block, uint32_t *packet, bool big_endian)
 {
     network_control_t control;
     int copy_length;
@@ -146,6 +146,7 @@ static uint32_t inline Network_TX_initFirstBlock(RegTX_PORTOut_t *block, uint32_
 
     // Copy Payload Data.
     int num_words = (copy_length + sizeof(uint32_t) - 1) / sizeof(uint32_t);
+    #pragma clang loop unroll_count(8)
     for (i = 0; i < num_words; i++)
     {
         if (big_endian)
@@ -170,6 +171,7 @@ static uint32_t inline Network_TX_initFirstBlock(RegTX_PORTOut_t *block, uint32_
         copy_length = ETHERNET_FRAME_MIN;
 
         num_words = DIVIDE_RND_UP(copy_length, sizeof(uint32_t));
+        #pragma clang loop unroll_count(8)
         for (; i < num_words; i++)
         {
             // Pad remaining with 0's
@@ -184,7 +186,7 @@ static uint32_t inline Network_TX_initFirstBlock(RegTX_PORTOut_t *block, uint32_
     return copy_length;
 }
 
-static uint32_t inline Network_TX_initAdditionalBlock(RegTX_PORTOut_t *block, int32_t next_block, uint32_t length, uint32_t *packet, bool big_endian)
+static uint32_t inline __attribute__((always_inline)) Network_TX_initAdditionalBlock(RegTX_PORTOut_t *block, int32_t next_block, uint32_t length, uint32_t *packet, bool big_endian)
 {
     int i;
     network_control_t control;
@@ -210,6 +212,7 @@ static uint32_t inline Network_TX_initAdditionalBlock(RegTX_PORTOut_t *block, in
 
     // Copy payload data.
     int num_words = DIVIDE_RND_UP(length, sizeof(uint32_t));
+    #pragma clang loop unroll_count(8)
     for (i = 0; i < num_words; i++)
     {
         if (big_endian)
@@ -227,7 +230,7 @@ static uint32_t inline Network_TX_initAdditionalBlock(RegTX_PORTOut_t *block, in
     return control.bits.payload_length;
 }
 
-static inline bool Network_TX_transmitPacket_internal(uint8_t *packet, uint32_t length, bool big_endian, NetworkPort_t *port)
+static inline __attribute__((always_inline)) bool Network_TX_transmitPacket_internal(uint8_t *packet, uint32_t length, bool big_endian, NetworkPort_t *port)
 {
     if (!length)
     {
@@ -338,6 +341,7 @@ static uint32_t inline Network_TX_initFirstPassthroughBlock(RegTX_PORTOut_t *blo
 
     // Copy Payload Data.
     int num_words = DIVIDE_RND_UP(copy_length, sizeof(uint32_t));
+    #pragma clang loop unroll_count(8)
     for (i = 0; i < num_words; i++)
     {
         block[TX_PORT_OUT_ALL_FIRST_PAYLOAD_WORD + i].r32 = APE_PERI.BmcToNcReadBuffer.r32;
@@ -349,6 +353,7 @@ static uint32_t inline Network_TX_initFirstPassthroughBlock(RegTX_PORTOut_t *blo
         copy_length = ETHERNET_FRAME_MIN;
 
         num_words = DIVIDE_RND_UP(copy_length, sizeof(uint32_t));
+        #pragma clang loop unroll_count(8)
         for (; i < num_words; i++)
         {
             // Pad remaining with 0's
@@ -363,7 +368,7 @@ static uint32_t inline Network_TX_initFirstPassthroughBlock(RegTX_PORTOut_t *blo
     return copy_length;
 }
 
-static uint32_t inline Network_TX_initAdditionalPassthroughBlock(RegTX_PORTOut_t *block, int32_t next_block, uint32_t length)
+static uint32_t inline __attribute__((always_inline)) Network_TX_initAdditionalPassthroughBlock(RegTX_PORTOut_t *block, int32_t next_block, uint32_t length)
 {
     int i;
     network_control_t control;
@@ -389,6 +394,7 @@ static uint32_t inline Network_TX_initAdditionalPassthroughBlock(RegTX_PORTOut_t
 
     // Copy payload data.
     int num_words = DIVIDE_RND_UP(length, sizeof(uint32_t));
+    #pragma clang loop unroll_count(8)
     for (i = 0; i < num_words; i++)
     {
         block[TX_PORT_OUT_ALL_ADDITIONAL_PAYLOAD_WORD + i].r32 = APE_PERI.BmcToNcReadBuffer.r32;
