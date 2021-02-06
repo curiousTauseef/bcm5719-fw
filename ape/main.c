@@ -264,6 +264,33 @@ void checkSupply(void)
     }
 }
 
+void __attribute__((interrupt)) IRQ_VoltageSource()
+{
+    NVIC.InterruptClearPending.r32 = NVIC_INTERRUPT_CLEAR_PENDING_CLRPEND_VMAIN;
+
+    NetworkPort_t *port = gPort;
+    RegDEVICED0uClockPolicy_t d0u;
+    d0u.r32 = 0;
+
+    printf("Vsrc\n");
+
+    if (port->device->Status.bits.VMAINPowerStatus)
+    {
+        printf("Vsrc: Main\n");
+#if 0
+        // We are on VMain, set D0u to 0x13.
+        d0u.bits.MACClockSwitch = DEVICE_D0U_CLOCK_POLICY_MAC_CLOCK_SWITCH_6_25MHZ;
+#endif
+    }
+    else
+    {
+        printf("Vsrc: Aux\n");
+        // We are on VAux, set D0u to 0 to enable 1000Mb/s support.
+    }
+
+    port->device->D0uClockPolicy.r32 = d0u.r32;
+}
+
 void __attribute__((interrupt)) IRQ_PowerStatusChanged(void)
 {
     RegAPEStatus_t status;
@@ -319,8 +346,8 @@ void __attribute__((noreturn)) loaderLoop(void)
     initSHM(&SHM2);
     initSHM(&SHM3);
 
-    // Enable GRC Reset / Power Status Changed interrupt
-    NVIC.InterruptSetEnable.r32 = NVIC_INTERRUPT_SET_ENABLE_SETENA_GENERAL_RESET;
+    // Enable GRC Reset / Power Status Changed and the Vsrc interrupt
+    NVIC.InterruptSetEnable.r32 = NVIC_INTERRUPT_SET_ENABLE_SETENA_VMAIN | NVIC_INTERRUPT_SET_ENABLE_SETENA_GENERAL_RESET;
 
     for (;;)
     {
