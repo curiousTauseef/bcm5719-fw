@@ -250,20 +250,6 @@ void handleBMCPacket(void)
     }
 }
 
-void checkSupply(void)
-{
-    if (NVIC.InterruptClearPending.r32 & NVIC_INTERRUPT_CLEAR_PENDING_CLRPEND_VMAIN)
-    {
-        NVIC.InterruptClearPending.r32 = NVIC_INTERRUPT_CLEAR_PENDING_CLRPEND_VMAIN;
-
-        printf("Power State Changed.\n");
-
-        wait_for_all_rx();
-        RMU_init();
-        NCSI_reload(AS_NEEDED);
-    }
-}
-
 void __attribute__((interrupt)) IRQ_VoltageSource()
 {
     NVIC.InterruptClearPending.r32 = NVIC_INTERRUPT_CLEAR_PENDING_CLRPEND_VMAIN;
@@ -289,6 +275,9 @@ void __attribute__((interrupt)) IRQ_VoltageSource()
     }
 
     port->device->D0uClockPolicy.r32 = d0u.r32;
+
+    // Ensure we reinitialize hardware as needed.
+    gResetOccured = true;
 }
 
 void __attribute__((interrupt)) IRQ_PowerStatusChanged(void)
@@ -384,7 +373,6 @@ void __attribute__((noreturn)) loaderLoop(void)
             handleCommand(&SHM1);
             handleCommand(&SHM2);
             handleCommand(&SHM3);
-            checkSupply();
 
             if (host_state != SHM.HostDriverState.bits.State)
             {
@@ -507,8 +495,6 @@ void __attribute__((noreturn)) __start()
     gPort = Network_getPort(NETWORK_PORT);
 
     NCSI_usePort(gPort);
-
-    checkSupply();
 
     RMU_init();
 
